@@ -27,18 +27,22 @@ menu = st.sidebar.radio("📌 Select an Option", ["Add a Book 🆕", "Remove a B
 def animated_success(message):
     with st.spinner("Processing..."):
         time.sleep(1)
-    st.balloons()
-    st.success(message)
+    st.toast(message, icon="✅")
+    st.snow()
+    time.sleep(1)  # Ensure animation is visible before rerun
 
 def animated_warning(message):
+    with st.spinner("Processing..."):
+        time.sleep(1)
+    st.toast(message, icon="⚠️")
     st.snow()
-    st.warning(message)
+    time.sleep(1)  # Ensure animation is visible before rerun
 
 if menu == "Add a Book 🆕":
     st.header("📚 Add a New Book")
     title = st.text_input("📖 Enter Book Title")
     author = st.text_input("✍️ Enter Author Name")
-    year = st.number_input("📅 Enter Publication Year", min_value=2023, max_value=2100, step=1)
+    year = st.number_input("📅 Enter Publication Year", min_value=1000, max_value=2100, step=1)
     genre = st.text_input("📂 Enter Genre")
     read_status = st.checkbox("✅ Mark as Read")
     
@@ -51,13 +55,16 @@ if menu == "Add a Book 🆕":
 elif menu == "Remove a Book ❌":
     st.header("🗑️ Remove a Book")
     book_titles = [book["title"] for book in library]
-    selected_book = st.selectbox("📖 Select a book to remove", book_titles, key="remove_book")
-    
-    if st.button("❌ Remove Book"):
-        library = [book for book in library if book["title"] != selected_book]
-        save_library()
-        animated_success("🚀 Book Removed Successfully! 📖")
-        st.rerun()
+    if book_titles:
+        selected_book = st.selectbox("📖 Select a book to remove", book_titles, key="remove_book")
+        
+        if st.button("❌ Remove Book"):
+            library = [book for book in library if book["title"] != selected_book]
+            save_library()
+            animated_success("🚀 Book Removed Successfully! 📖")
+            st.rerun()
+    else:
+        st.warning("📭 No books available to remove!")
 
 elif menu == "Search a Book 🔍":
     st.header("🔍 Search for a Book")
