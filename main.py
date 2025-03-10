@@ -1,118 +1,92 @@
 import streamlit as st
 import json
-import os
 import time
+import random
 
-# 📂 Load Library Data from File (if exists)
-LIBRARY_FILE = "library.json"
-
+# Load library from file
 def load_library():
-    if os.path.exists(LIBRARY_FILE):
-        with open(LIBRARY_FILE, "r") as file:
+    try:
+        with open("library.json", "r") as file:
             return json.load(file)
-    return []
+    except FileNotFoundError:
+        return []
 
+# Save library to file
 def save_library():
-    with open(LIBRARY_FILE, "w") as file:
-        json.dump(library, file, indent=4)
+    with open("library.json", "w") as file:
+        json.dump(library, file)
 
-# 📚 Library Data (Load from File)
+# Initialize library
 library = load_library()
 
-# 🎨 Streamlit Page Config
-st.set_page_config(page_title="📖 Personal Library Manager", layout="centered")
+st.title("📚 Personal Library Manager 📖")
+st.write("Manage your personal book collection easily! 📔")
 
-# 🎉 UI Header
-st.title("📚 Personal Library Manager")
+menu = st.sidebar.radio("📌 Select an Option", ["Add a Book 🆕", "Remove a Book ❌", "Search a Book 🔍", "Display All Books 📖", "View Library 📊", "Save & Exit 💾"])
 
-# 🔄 Menu Selection
-menu = st.sidebar.radio("📌 Select an Option", ["Add a Book", "Remove a Book", "Search a Book", "View Library"])
+def animated_success(message):
+    with st.spinner("Processing..."):
+        time.sleep(1)
+    st.balloons()
+    st.success(message)
 
-# 📝 1️⃣ **Add a Book**
-if menu == "Add a Book":
-    st.subheader("➕ Add a New Book")
-    title = st.text_input("📖 Book Title")
-    author = st.text_input("✍ Author Name")
-    year = st.number_input("📅 Publication Year", min_value=1000, max_value=2025, step=1)
-    genre = st.text_input("🎭 Genre")
-    read_status = st.radio("✅ Have you read this book?", ["Yes", "No"])
+def animated_warning(message):
+    st.snow()
+    st.warning(message)
 
-    if st.button("📥 Add Book"):
-        if title and author and genre:
-            new_book = {
-                "title": title,
-                "author": author,
-                "year": int(year),
-                "genre": genre,
-                "read": read_status == "Yes"
-            }
-            library.append(new_book)
-            save_library()
-            st.success(f"✅ Book '{title}' added successfully!")
-            time.sleep(0.5)
-            st.snow()  # ❄️ Animation for adding book
+if menu == "Add a Book 🆕":
+    st.header("📚 Add a New Book")
+    title = st.text_input("📖 Enter Book Title")
+    author = st.text_input("✍️ Enter Author Name")
+    year = st.number_input("📅 Enter Publication Year", min_value=2023, max_value=2100, step=1)
+    genre = st.text_input("📂 Enter Genre")
+    read_status = st.checkbox("✅ Mark as Read")
+    
+    if st.button("➕ Add Book"):
+        library.append({"title": title, "author": author, "year": year, "genre": genre, "read": read_status})
+        save_library()
+        animated_success("🎉 Book Added Successfully! 📚")
+        st.rerun()
+
+elif menu == "Remove a Book ❌":
+    st.header("🗑️ Remove a Book")
+    book_titles = [book["title"] for book in library]
+    selected_book = st.selectbox("📖 Select a book to remove", book_titles, key="remove_book")
+    
+    if st.button("❌ Remove Book"):
+        library = [book for book in library if book["title"] != selected_book]
+        save_library()
+        animated_success("🚀 Book Removed Successfully! 📖")
+        st.rerun()
+
+elif menu == "Search a Book 🔍":
+    st.header("🔍 Search for a Book")
+    search_term = st.text_input("🔎 Enter title or author name to search")
+    if st.button("🔍 Search"):
+        results = [book for book in library if search_term.lower() in book["title"].lower() or search_term.lower() in book["author"].lower()]
+        if results:
+            st.write("🎯 Matching Books:")
+            st.table(results)
         else:
-            st.warning("⚠ Please fill all fields before adding.")
+            animated_warning("❌ No books found with this search term!")
 
-# ❌ 2️⃣ **Remove a Book**
-elif menu == "Remove a Book":
-    st.subheader("🗑 Remove a Book")
+elif menu == "Display All Books 📖":
+    st.header("📖 Your Library")
     if library:
-        book_titles = [book["title"] for book in library]
-        remove_title = st.selectbox("📖 Select a book to remove", book_titles, key="remove_book")
-
-        if st.button("🗑 Remove Book"):
-            library = [book for book in library if book["title"] != remove_title]
-            save_library()
-            st.error(f"🚮 '{remove_title}' removed from the library!")
-            time.sleep(0.5)
-            st.snow()  # ❄️ Animation for removing book
+        st.table(library)
     else:
-        st.warning("⚠ No books available to remove!")
+        animated_warning("📭 Your library is empty! Start adding books! 📚")
 
-# 🔍 3️⃣ **Search for a Book**
-elif menu == "Search a Book":
-    st.subheader("🔍 Search for a Book")
-    if library:
-        search_title = st.selectbox("📖 Select a book to search", [book["title"] for book in library], key="search_book")
-        found_book = next((book for book in library if book["title"] == search_title), None)
-
-        if found_book:
-            st.success(f"📖 **Title:** {found_book['title']}")
-            st.write(f"✍ **Author:** {found_book['author']}")
-            st.write(f"📅 **Year:** {found_book['year']}")
-            st.write(f"🎭 **Genre:** {found_book['genre']}")
-            st.write(f"✅ **Read:** {'Yes' if found_book['read'] else 'No'}")
-            time.sleep(0.5)
-            st.balloons()  # 🎈 Animation for search
-    else:
-        st.warning("⚠ No books available to search!")
-
-# 📋 4️⃣ **View Library**
-
-
-# 📊 5️⃣ **Library Statistics**
-elif menu == "View Library":
-    st.subheader("📊 Library Statistics")
+elif menu == "View Library 📊":
+    st.header("📊 Library Statistics")
     total_books = len(library)
-    read_books = sum(1 for book in library if book["read"])
+    books_read = sum(1 for book in library if book["read"])
+    percentage_read = (books_read / total_books * 100) if total_books > 0 else 0
+    
+    st.write(f"📚 Total Books: {total_books}")
+    st.write(f"✅ Books Read: {books_read}")
+    st.write(f"📊 Percentage Read: {percentage_read:.2f}%")
+    st.snow()
 
-    if total_books > 0:
-        read_percentage = (read_books / total_books) * 100
-    else:
-        read_percentage = 0
-
-    st.write(f"📚 **Total Books:** {total_books}")
-    st.write(f"✅ **Books Read:** {read_books}")
-    st.write(f"📊 **Percentage Read:** {read_percentage:.2f}%")
-
-    if read_percentage == 100:
-        time.sleep(0.5)
-        st.snow()  # ❄️ Snow effect
-        time.sleep(0.5)
-        st.balloons()  # 🎈 Balloons
-        time.sleep(0.5)
-        st.success("🎉 Congratulations! You have read all the books in your library!")
-
-# 🔄 Save Library on Exit
-save_library()
+elif menu == "Save & Exit 💾":
+    animated_success("💾 Library Saved! Exiting... 👋")
